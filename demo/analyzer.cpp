@@ -179,6 +179,9 @@ void Analyzer::genDFA() {
     while (!q.empty()) {
         auto now = q.front();
         q.pop();
+        if (now == 3) {
+            int x = 1;
+        }
         // 拿出产生式全部往前走一步
         for (auto it: m_property[now]) {
             std::string newProp = it.second;
@@ -207,6 +210,8 @@ void Analyzer::genDFA() {
             // 如果这个边权已经有一个点了，那就推进去就好了
             if (m_Graph[now][weight] != 0) {
                 int toPoint = m_Graph[now][weight];
+                // 先删除掉上一个映射
+                m_prop2node.erase(m_property[toPoint]);
                 // 插入
                 for (auto it: props) {
                     if (std::count(m_property[toPoint].begin(), m_property[toPoint].end(), it)) {
@@ -214,6 +219,7 @@ void Analyzer::genDFA() {
                     }
                     m_property[toPoint].emplace_back(it);
                 }
+                m_prop2node[m_property[toPoint]] = toPoint;    // 重新映射一遍
                 continue;
             }
             // 如果没有，那么首先看看是不是去一个已经出现过的点
