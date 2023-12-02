@@ -18,7 +18,7 @@ void Analyzer::addGrammar(std::string &grammar) {
     for (auto it: grammar) {
         if (it != ' ' && it != '\n') {
             str += it;
-            if (it != '-' && it != '>' && it != '@') {
+            if (it != '-' && it != '>' && it != '@' && it != '|') {
                 m_alphabet.insert(it);
             }
         }
@@ -44,12 +44,20 @@ void Analyzer::addGrammar(std::string &grammar) {
 }
 
 void Analyzer::clear() {
-    m_first.clear();
-    m_grammar.clear();
     n_begin = m_begin = '$';
     m_ana = m_cnt = m_nodes = 0;
     m_SLR1 = 1;
+    m_wstate = -1;
+    m_first.clear();
+    m_grammar.clear();
     m_alphabet.clear();
+    m_table.clear();
+    m_follow.clear();
+    m_Graph.clear();
+    m_prop2node.clear();
+    m_property.clear();
+    m_reduce.clear();
+    m_shift.clear();
 }
 
 void Analyzer::genFirst() {
@@ -285,6 +293,7 @@ void Analyzer::checkSLR1() {
                             m_SLR1 = 0;
                             m_reduce.emplace_back(from, m_follow[from]);
                             m_reduce.emplace_back(rfrom, m_follow[rfrom]);
+                            m_wstate = i;
                             return;
                         }
                     }
@@ -302,6 +311,7 @@ void Analyzer::checkSLR1() {
                     m_SLR1 = -1;
                     m_shift.emplace_back(from, to);
                     m_shift.emplace_back(rfrom, rto);
+                    m_wstate = i;
                     return;
                 }
             }
@@ -471,6 +481,8 @@ std::vector< std::vector< std::deque<std::string> > > Analyzer::analyze(std::str
 
         if (in.empty()) {
             action.push_back("ERROR");
+            tmp.push_back(action);
+            ans.emplace_back(tmp);
             break;
         }
 
@@ -479,6 +491,8 @@ std::vector< std::vector< std::deque<std::string> > > Analyzer::analyze(std::str
 
         if (!util::checkDigit(ana.back())) {
             action.push_back("ERROR");
+            tmp.push_back(action);
+            ans.emplace_back(tmp);
             break;
         }
         // 看当前栈顶状态
@@ -507,10 +521,11 @@ std::vector< std::vector< std::deque<std::string> > > Analyzer::analyze(std::str
                 char go = to[0];
                 ana.push_back(std::string(1, go));    // 规约入栈
                 ana.push_back(m_table[nowState][go].second); // goto
-                //                ana.push_back(std::to_string(nowState)); // goto状态入栈
             }
         } else {
             action.push_back("ERROR");
+            tmp.push_back(action);
+            ans.emplace_back(tmp);
             break;
         }
         tmp.push_back(action);
@@ -530,6 +545,11 @@ char Analyzer::getNBegin()
 }
 int Analyzer::getNodes() {
     return m_nodes;
+}
+
+int Analyzer::getWstate()
+{
+    return m_wstate;
 }
 
 std::set<char> Analyzer::getAlphabet()

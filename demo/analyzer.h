@@ -48,6 +48,8 @@ public:
 
     int getNodes();
 
+    int getWstate();
+
     std::set<char> getAlphabet();
     std::map<char, std::set<char>> getFirst();
     std::map<char, std::set<char>> getFollow();
@@ -79,6 +81,7 @@ private:
 
     // SLR1部分
     int m_SLR1;
+    int m_wstate;
     std::vector<std::pair<char, std::set<char>>> m_reduce;
     std::vector<std::pair<char, std::string>> m_shift;
     // 点-边权-动作

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1250</width>
-    <height>760</height>
+    <width>1516</width>
+    <height>777</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>10</x>
       <y>0</y>
-      <width>371</width>
-      <height>421</height>
+      <width>191</width>
+      <height>721</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -50,10 +50,10 @@ QGroupBox::title {
    <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>420</y>
-      <width>371</width>
-      <height>291</height>
+      <x>940</x>
+      <y>0</y>
+      <width>561</width>
+      <height>71</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -83,10 +83,10 @@ QGroupBox::title {
    <widget class="QGroupBox" name="groupBox_3">
     <property name="geometry">
      <rect>
-      <x>390</x>
+      <x>210</x>
       <y>0</y>
-      <width>841</width>
-      <height>421</height>
+      <width>721</width>
+      <height>721</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -160,10 +160,10 @@ QGroupBox::title {
    <widget class="QGroupBox" name="groupBox_5">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>420</y>
-      <width>841</width>
-      <height>291</height>
+      <x>940</x>
+      <y>80</y>
+      <width>561</width>
+      <height>641</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -203,12 +203,42 @@ QGroupBox::title {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1250</width>
+     <width>1516</width>
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="openGrammar"/>
+    <addaction name="saveGrammar"/>
+    <addaction name="openSentence"/>
+    <addaction name="saveSentence"/>
+   </widget>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="openGrammar">
+   <property name="text">
+    <string>打开文法文件</string>
+   </property>
+  </action>
+  <action name="saveGrammar">
+   <property name="text">
+    <string>保存文法文件</string>
+   </property>
+  </action>
+  <action name="openSentence">
+   <property name="text">
+    <string>打开句子文件</string>
+   </property>
+  </action>
+  <action name="saveSentence">
+   <property name="text">
+    <string>保存句子文件</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
