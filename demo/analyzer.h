@@ -38,12 +38,36 @@ public:
 
     void debugShow();
 
+    int getSLR1();
+
+    int getAna();
+
+    char getBegin();
+
+    char getNBegin();
+
+    int getNodes();
+
+    std::set<char> getAlphabet();
+    std::map<char, std::set<char>> getFirst();
+    std::map<char, std::set<char>> getFollow();
+    std::map<int, std::map<char, int>> getGraph();
+    std::map<int, std::vector<std::pair<char, std::string>>> getProperty();
+    std::vector<std::pair<char, std::set<char>>> getReduce();
+    std::vector<std::pair<char, std::string>> getShift();
+    std::map<int, std::map<char, std::pair<std::string, std::string>>> getTable();
+
+
 private:
+
+    int m_ana;
+    std::set<char> m_alphabet;
     // First, Follow 部分
     std::map<char, std::set<std::string>> m_grammar;
     std::map<char, std::set<char>> m_first;
     std::map<char, std::set<char>> m_follow;
     char m_begin;
+    char n_begin;
     int m_cnt;
 
     // DFA 部分

@@ -18,6 +18,9 @@ void Analyzer::addGrammar(std::string &grammar) {
     for (auto it: grammar) {
         if (it != ' ' && it != '\n') {
             str += it;
+            if (it != '-' && it != '>' && it != '@') {
+                m_alphabet.insert(it);
+            }
         }
     }
     int i = 3;
@@ -43,12 +46,14 @@ void Analyzer::addGrammar(std::string &grammar) {
 void Analyzer::clear() {
     m_first.clear();
     m_grammar.clear();
-    m_begin = '$';
-    m_cnt = m_nodes = 0;
+    n_begin = m_begin = '$';
+    m_ana = m_cnt = m_nodes = 0;
     m_SLR1 = 1;
+    m_alphabet.clear();
 }
 
 void Analyzer::genFirst() {
+    m_ana = 1;
     bool genNew = true;
     while (genNew) {
         genNew = false;
@@ -145,17 +150,18 @@ void Analyzer::genDFA() {
         // 不能用尽26个大写字母
         for (char i = 'A'; i <= 'Z'; i++) {
             if (!m_first.count(i)) {
-                char t_begin = i;
-                m_grammar[t_begin].insert(std::string(1, m_begin));
-                m_begin = t_begin;
+                n_begin = i;
+                m_grammar[n_begin].insert(std::string(1, m_begin));
                 break;
             }
         }
-        m_follow[m_begin].insert('$');  // 文法结束符号在新的begin的Follow集合里面
+        m_follow[n_begin].insert('$');  // 文法结束符号在新的begin的Follow集合里面
+    } else {
+        n_begin = m_begin;
     }
     // 先构造出第一个点
     std::vector<std::pair<char, std::string>> props;
-    getProps(m_begin, props);
+    getProps(n_begin, props);
     m_property[m_nodes] = props;
     // 反方向的映射
     m_prop2node[m_property[m_nodes]] = m_nodes;
@@ -383,6 +389,16 @@ void Analyzer::debugShow() {
     }
 }
 
+int Analyzer::getSLR1()
+{
+    return m_SLR1;
+}
+
+int Analyzer::getAna()
+{
+    return m_ana;
+}
+
 // 二维SLR1表
 // 移进-规约冲突的点要删掉规约
 // 在某一个点内:
@@ -419,7 +435,7 @@ void Analyzer::genSLR1Table() {
                     if (m_table[i].count(weight)) {
                         continue;
                     }
-                    if (produce == m_begin) {
+                    if (produce == n_begin) {
                         m_table[i][weight] = std::make_pair("acc", "");
                     } else {
                         m_table[i][weight] = std::make_pair("r", reduce);
@@ -501,4 +517,49 @@ std::vector< std::vector< std::deque<std::string> > > Analyzer::analyze(std::str
         ans.emplace_back(tmp);
     }
     return ans;
+}
+
+
+char Analyzer::getBegin() {
+    return m_begin;
+}
+
+char Analyzer::getNBegin()
+{
+    return n_begin;
+}
+int Analyzer::getNodes() {
+    return m_nodes;
+}
+
+std::set<char> Analyzer::getAlphabet()
+{
+    return m_alphabet;
+}
+
+std::map<char, std::set<char>> Analyzer::getFirst() {
+    return m_first;
+}
+
+std::map<char, std::set<char>> Analyzer::getFollow() {
+    return m_follow;
+}
+
+std::map<int, std::map<char, int>> Analyzer::getGraph() {
+    return m_Graph;
+}
+
+std::map<int, std::vector<std::pair<char, std::string>>> Analyzer::getProperty() {
+    return m_property;
+}
+
+std::vector<std::pair<char, std::set<char>>> Analyzer::getReduce() {
+    return m_reduce;
+}
+std::vector<std::pair<char, std::string>> Analyzer::getShift() {
+    return m_shift;
+}
+
+std::map<int, std::map<char, std::pair<std::string, std::string>>> Analyzer::getTable() {
+    return m_table;
 }
