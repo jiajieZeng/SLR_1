@@ -80,15 +80,15 @@ void MainWindow::on_firstBtn_clicked()
         std::string tlhs = std::string(1, lhs);
         QString qlhs = "First(" + QString::fromStdString(tlhs) + ")";
         ui->outputTable->setItem(row, 0, new QTableWidgetItem(qlhs));
-        std::string trhs = "{";
+        std::string trhs = "{ ";
         int cnt = 0;
         for (auto c: rhs) {
             if (++cnt > 1) {
-                trhs += ",";
+                trhs += ", ";
             }
             trhs += c;
         }
-        trhs += "}";
+        trhs += " }";
         QString qrhs = QString::fromStdString(trhs);
         ui->outputTable->setItem(row, 1, new QTableWidgetItem(qrhs));
         ++row;
@@ -104,15 +104,15 @@ void MainWindow::on_firstBtn_clicked()
         std::string tlhs = std::string(1, lhs);
         QString qlhs = "Follow(" + QString::fromStdString(tlhs) + ")";
         ui->outputTable->setItem(row, 0, new QTableWidgetItem(qlhs));
-        std::string trhs = "{";
+        std::string trhs = "{ ";
         int cnt = 0;
         for (auto c: rhs) {
             if (++cnt > 1) {
-                trhs += ",";
+                trhs += ", ";
             }
             trhs += c;
         }
-        trhs += "}";
+        trhs += " }";
         QString qrhs = QString::fromStdString(trhs);
         ui->outputTable->setItem(row, 1, new QTableWidgetItem(qrhs));
         ++row;
