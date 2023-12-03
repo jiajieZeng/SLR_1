@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     worker = new Analyzer();
     ui->setupUi(this);
     ui->grammarInput->setPlaceholderText("请在此输入文法");
-    ui->sentenceInput->setPlaceholderText("请在此输入一行要分析的句子(以 $ 结尾)\n输入前请确认已经进行了文法分析");
+    ui->sentenceInput->setPlaceholderText("请在此输入要分析的句子(以 $ 结尾)\n输入前请确认已经进行了文法分析");
     ui->outputTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->stackTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
@@ -280,16 +280,21 @@ void MainWindow::on_sentenceBtn_clicked()
     }
     QTextDocument *document = Q_NULLPTR;
     document = ui->sentenceInput->document();
-    std::vector<std::vector<std::deque<std::string>>> ans;
+
+    std::string str;
     for (QTextBlock textBlock = document->begin(); textBlock != document->end(); textBlock = textBlock.next()) {
         std::string tmp = textBlock.text().toStdString();
         if (tmp.empty()) {
             continue;
         }
-        ans = worker->analyze(tmp);
-        break;
+        for (auto c: tmp) {
+            if (c == '\n' || c == ' ') {
+                continue;
+            }
+            str += c;
+        }
     }
-
+    std::vector<std::vector<std::deque<std::string>>> ans = worker->analyze(str);
     ui->stackTable->clear();
     ui->stackTable->setRowCount(ans.size() + 5);
     ui->stackTable->setColumnCount(6);
