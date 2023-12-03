@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <iostream>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -251,13 +252,18 @@ void MainWindow::on_tableBtn_clicked()
         ui->outputTable->setItem(1, col, new QTableWidgetItem(QString::fromStdString(s)));
     }
     int n = table.size();
+    std::cout << "DEBUG:\n";
+    std::cout << "---------------------------------------------------\n";
     for (int i = 0; i < n; i++) {
         ui->outputTable->setItem(i + 2, 0, new QTableWidgetItem(QString::number(i)));
         for (auto &[weight, move]: table[i]) {
+            if (mp[weight] == 0) {
+                std::cout << i << ": " << weight << "\n";
+            }
             ui->outputTable->setItem(i + 2, mp[weight], new QTableWidgetItem(QString::fromStdString(move.first + " " + move.second)));
         }
     }
-
+    std::cout << "---------------------------------------------------\n";
 
 }
 

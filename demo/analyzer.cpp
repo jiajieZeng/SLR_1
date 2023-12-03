@@ -18,9 +18,12 @@ void Analyzer::addGrammar(std::string &grammar) {
     for (auto it: grammar) {
         if (it != ' ' && it != '\n') {
             str += it;
-            if (it != '-' && it != '>' && it != '@' && it != '|') {
-                m_alphabet.insert(it);
-            }
+        }
+    }
+    m_alphabet.insert(str[0]);
+    for (int i = 3; i < str.size(); i++) {
+        if (str[i] != '@') {
+            m_alphabet.insert(str[i]);
         }
     }
     int i = 3;
@@ -434,7 +437,6 @@ int Analyzer::getAna()
 //      如果有规约项，就对Follow集合的边权填 r
 // 考虑先把移进填进去，再填规约，规约填的时候不能覆盖已存在的项
 void Analyzer::genSLR1Table() {
-    std::cout << "DEBUG:" << std::endl;
     for (int i = 0; i <= m_nodes; i++) {
         // 先填入移进项目
         std::string move;
