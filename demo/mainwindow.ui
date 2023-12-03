@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1516</width>
+    <width>1522</width>
     <height>777</height>
    </rect>
   </property>
@@ -203,7 +203,7 @@ QGroupBox::title {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1516</width>
+     <width>1522</width>
      <height>21</height>
     </rect>
    </property>

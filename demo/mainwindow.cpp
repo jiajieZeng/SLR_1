@@ -178,7 +178,7 @@ void MainWindow::on_judgeBtn_clicked()
         ans = "文法是SLR(1)文法";
     }
     if (sign == -1) {
-        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在移进-规约冲突\n";
+        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在移进-归约冲突\n";
         std::vector<std::pair<char, std::string>> shift = worker->getShift();
         for (auto it: shift) {
             str += std::string(1, it.first) + "->" + it.second + "\n";
@@ -186,7 +186,7 @@ void MainWindow::on_judgeBtn_clicked()
         ans = QString::fromStdString(str);
     }
     if (sign == 0) {
-        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在归约-规约冲突\n";
+        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在归约-归约冲突\n";
         std::vector<std::pair<char, std::set<char>>> reduce = worker->getReduce();
         for (auto &[prod, prop]: reduce) {
             str += "Follow(" + std::string(1, prod) + ")={ ";

@@ -61,6 +61,7 @@ void Analyzer::clear() {
 }
 
 void Analyzer::genFirst() {
+    debugShowGrammar();
     m_ana = 1;
     bool genNew = true;
     while (genNew) {
@@ -72,7 +73,7 @@ void Analyzer::genFirst() {
                 int k = 0;
                 while (k < n) {
                     char to = chain[k];
-                    if (to == '@' || std::islower(to)) {
+                    if (!std::isupper(to)) {
                         if (m_first[to].empty()){
                             genNew = true;
                         }
@@ -107,9 +108,6 @@ void Analyzer::genFollow() {
             for (auto &str: toset) {
                 for (int i = 0; i < str.size(); i++) {
                     char now = str[i];
-                    if (A == 'A' && now == 'D') {
-                        int x = 1;
-                    }
                     if (!std::isupper(now)) {
                         continue;
                     }
@@ -155,13 +153,18 @@ void Analyzer::recFollow(const std::string &str, int i, int j, bool &flag) {
 
 void Analyzer::genDFA() {
     if (m_grammar[m_begin].size() > 1) {
-        // 不能用尽26个大写字母
+        // 拓广文法
+        bool flag = 0;
         for (char i = 'A'; i <= 'Z'; i++) {
             if (!m_first.count(i)) {
                 n_begin = i;
                 m_grammar[n_begin].insert(std::string(1, m_begin));
+                flag = 1;
                 break;
             }
+        }
+        if (flag == 0) {
+            n_begin = 'Z' + 1;
         }
         m_follow[n_begin].insert('$');  // 文法结束符号在新的begin的Follow集合里面
     } else {
@@ -179,9 +182,7 @@ void Analyzer::genDFA() {
     while (!q.empty()) {
         auto now = q.front();
         q.pop();
-        if (now == 3) {
-            int x = 1;
-        }
+
         // 拿出产生式全部往前走一步
         for (auto it: m_property[now]) {
             std::string newProp = it.second;
@@ -202,18 +203,17 @@ void Analyzer::genDFA() {
             // 非终结符
             if (pos + 1 < newProp.size() && std::isupper(newProp[pos + 1])) {
                 // 要递归处理，因为可能最左边有很多层非终结符
-                for (auto &to: m_grammar[newProp[pos + 1]]) {
-                    getProps(newProp[pos + 1], props);
-                }
+                getProps(newProp[pos + 1], props);
             }
             // 加点
             // 如果这个边权已经有一个点了，那就推进去就好了
-            if (m_Graph[now][weight] != 0) {
+            if (m_Graph[now].count(weight)) {
                 int toPoint = m_Graph[now][weight];
                 // 先删除掉上一个映射
                 m_prop2node.erase(m_property[toPoint]);
                 // 插入
                 for (auto it: props) {
+                    // 重复的不要推进去
                     if (std::count(m_property[toPoint].begin(), m_property[toPoint].end(), it)) {
                         continue;
                     }
@@ -228,6 +228,7 @@ void Analyzer::genDFA() {
                 continue;
             }
             int to = ++m_nodes;
+            m_Graph[to];    // 插入占位
             m_Graph[now][weight] = to;
             m_property[to] = props;
             m_prop2node[props] = to;
@@ -402,6 +403,15 @@ void Analyzer::debugShow() {
             std::cout << "{" << weight << " , " << move.first << " " << move.second << "}  ";
         }
         std::cout << std::endl;
+    }
+}
+
+void Analyzer::debugShowGrammar()
+{
+    for (auto &[prod, prop]: m_grammar) {
+        for (auto it: prop) {
+            std::cout << prod << "->" << it << std::endl;
+        }
     }
 }
 
