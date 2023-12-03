@@ -79,8 +79,8 @@ private:
     std::map<int, std::map<char, int>> m_Graph;
     std::map<int, std::vector<std::pair<char, std::string>>> m_property;
     int m_nodes;
-    std::map<std::vector<std::pair<char, std::string>>, int> m_prop2node;
-    std::map<char, std::string> m_firstProp;
+    // 反向映射
+    std::map<std::pair<char, std::string>, int> m_prop2node;
     // SLR1部分
     int m_SLR1;
     int m_wstate;

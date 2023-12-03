@@ -174,8 +174,8 @@ void Analyzer::genDFA() {
     std::vector<std::pair<char, std::string>> props;
     getProps(n_begin, props);
     m_property[m_nodes] = props;
-    // 反方向的映射
-    m_prop2node[m_property[m_nodes]] = m_nodes;
+    // 反方向的映射，可以通过第一条产生式知道这个点是不是重复的
+    m_prop2node[m_property[m_nodes][0]] = m_nodes;
 
     std::queue<int> q;
     q.push(0);
@@ -198,6 +198,13 @@ void Analyzer::genDFA() {
             newProp[pos] = newProp[pos + 1];
             newProp[++pos] = '.';
             char weight = newProp[pos - 1];
+            // 往前走一步之后，可以通过其他点的第一条产生式判断这是不是一个重复的点
+            if (m_prop2node.count({it.first, newProp})) {
+                // 重复了就马上把边连过去，然后可以直接跳过
+                m_Graph[now][weight] = m_prop2node[{it.first, newProp}];
+                continue;
+            }
+
             props.clear();
             props.emplace_back(it.first, newProp);
             // 非终结符
@@ -210,7 +217,7 @@ void Analyzer::genDFA() {
             if (m_Graph[now].count(weight)) {
                 int toPoint = m_Graph[now][weight];
                 // 先删除掉上一个映射
-                m_prop2node.erase(m_property[toPoint]);
+                m_prop2node.erase(m_property[toPoint][0]);
                 // 插入
                 for (auto it: props) {
                     // 重复的不要推进去
@@ -219,19 +226,14 @@ void Analyzer::genDFA() {
                     }
                     m_property[toPoint].emplace_back(it);
                 }
-                m_prop2node[m_property[toPoint]] = toPoint;    // 重新映射一遍
-                continue;
-            }
-            // 如果没有，那么首先看看是不是去一个已经出现过的点
-            if (m_prop2node.count(props)) {
-                m_Graph[now][weight] = m_prop2node[props];
+                m_prop2node[m_property[toPoint][0]] = toPoint;    // 重新映射一遍
                 continue;
             }
             int to = ++m_nodes;
             m_Graph[to];    // 插入占位
             m_Graph[now][weight] = to;
             m_property[to] = props;
-            m_prop2node[props] = to;
+            m_prop2node[props[0]] = to;
             q.push(to);
         }
     }

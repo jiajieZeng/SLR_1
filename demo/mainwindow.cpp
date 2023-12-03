@@ -214,6 +214,10 @@ void MainWindow::on_tableBtn_clicked()
         QMessageBox::warning(this, "warning", "请先输入文法进行分析");
         return;
     }
+    if (worker->getSLR1() != 1) {
+        QMessageBox::warning(this, "warning", "不是SLR(1)文法，文法写出SLR(1)分析表");
+        return;
+    }
     ui->outputTable->clear();
     std::map<int, std::map<char, std::pair<std::string, std::string>>> table = worker->getTable();
     std::set<char> alphabet = worker->getAlphabet();
