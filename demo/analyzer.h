@@ -11,6 +11,8 @@
 #include <string>
 #include <queue>
 
+#include "Item.h"
+
 class Analyzer {
 
 public:
@@ -28,7 +30,7 @@ public:
 
     void genDFA();
 
-    void getProps(char from, std::vector<std::pair<char, std::string>> &props);
+    void getProps(char from, std::vector<Item> &props);
 
     void checkSLR1();
 
@@ -53,12 +55,19 @@ public:
     int getWstate();
 
     std::set<char> getAlphabet();
+
     std::map<char, std::set<char>> getFirst();
+
     std::map<char, std::set<char>> getFollow();
+
     std::map<int, std::map<char, int>> getGraph();
-    std::map<int, std::vector<std::pair<char, std::string>>> getProperty();
+
+    std::map<int, std::vector<Item>> getProperty();
+
     std::vector<std::pair<char, std::set<char>>> getReduce();
-    std::vector<std::pair<char, std::string>> getShift();
+
+    std::vector<Item> getShift();
+
     std::map<int, std::map<char, std::pair<std::string, std::string>>> getTable();
 
 
@@ -77,15 +86,15 @@ private:
     // DFA 部分
     // from weight to
     std::map<int, std::map<char, int>> m_Graph;
-    std::map<int, std::vector<std::pair<char, std::string>>> m_property;
+    std::map<int, std::vector<Item>> m_property;
     int m_nodes;
     // 反向映射
-    std::map<std::pair<char, std::string>, int> m_prop2node;
+    std::map<std::vector<Item>, int> m_prop2node;
     // SLR1部分
     int m_SLR1;
     int m_wstate;
     std::vector<std::pair<char, std::set<char>>> m_reduce;
-    std::vector<std::pair<char, std::string>> m_shift;
+    std::vector<Item> m_shift;
     // 点-边权-动作
     std::map<int, std::map<char, std::pair<std::string, std::string> >> m_table;
 

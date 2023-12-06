@@ -23,4 +23,17 @@ bool checkDigit(std::string s) {
     return 1;
 }
 
+std::string combineDot(Item &t)
+{
+    std::string res = "";
+    std::string lhs = t.second;
+    int pos = t.idx;
+    if (lhs.empty()) {
+        res = ".";
+    } else {
+        res = lhs.substr(0, pos) + "." + lhs.substr(pos);
+    }
+    return res;
+}
+
 }

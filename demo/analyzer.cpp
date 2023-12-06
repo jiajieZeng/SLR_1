@@ -16,16 +16,11 @@ Analyzer::Analyzer() {
 void Analyzer::addGrammar(std::string &grammar) {
     std::string str = "";
     for (auto it: grammar) {
-        if (it != ' ' && it != '\n') {
+        if (it != ' ' && it != '\n' && it != '\r') {
             str += it;
         }
     }
     m_alphabet.insert(str[0]);
-    for (int i = 3; i < str.size(); i++) {
-        if (str[i] != '@') {
-            m_alphabet.insert(str[i]);
-        }
-    }
     int i = 3;
     std::string to = "";
     char from = str[0];
@@ -36,6 +31,9 @@ void Analyzer::addGrammar(std::string &grammar) {
     for (; i < str.size(); i++) {
         if (str[i] != '|') {
             to += str[i];
+            if (str[i] != '@') {
+                m_alphabet.insert(str[i]);
+            }
         } else {
             m_grammar[from].insert(to);
             to = "";
@@ -174,111 +172,132 @@ void Analyzer::genDFA() {
         n_begin = m_begin;
     }
     // 先构造出第一个点
-    std::vector<std::pair<char, std::string>> props;
+    std::vector<Item> props;
     getProps(n_begin, props);
     m_property[m_nodes] = props;
-    // 反方向的映射，可以通过第一条产生式知道这个点是不是重复的
-    m_prop2node[m_property[m_nodes][0]] = m_nodes;
+    // 反方向的映射
+    m_prop2node[m_property[m_nodes]] = m_nodes;
 
     std::queue<int> q;
     q.push(0);
     while (!q.empty()) {
         auto now = q.front();
         q.pop();
-
+        std::map<char, std::vector<Item>> tempNode; // 临时点
         // 拿出产生式全部往前走一步
-        for (auto it: m_property[now]) {
-            std::string newProp = it.second;
+        for (auto [produce, newProp, pos]: m_property[now]) {
             if (newProp.empty()) {
                 continue;
             }
-            int pos = newProp.find('.');
-            // 已经到了最后一步
-            if (pos == newProp.size() - 1) {
+            // 已经到了最后一步 A->01234  idx=5前面已经走完
+            if (pos == newProp.size()) {
                 continue;
             }
             // 往前走一步
-            newProp[pos] = newProp[pos + 1];
-            newProp[++pos] = '.';
-            char weight = newProp[pos - 1];
-            // 往前走一步之后，可以通过其他点的第一条产生式判断这是不是一个重复的点
-            if (m_prop2node.count({it.first, newProp})) {
-                // 重复了就马上把边连过去，然后可以直接跳过
-                m_Graph[now][weight] = m_prop2node[{it.first, newProp}];
-                continue;
-            }
-
+            char weight = newProp[pos];
+            ++pos;
             props.clear();
-            props.emplace_back(it.first, newProp);
+            props.emplace_back(produce, newProp, pos);
             // 非终结符
-            if (pos + 1 < newProp.size() && std::isupper(newProp[pos + 1])) {
+            if (pos < newProp.size() && std::isupper(newProp[pos])) {
                 // 要递归处理，因为可能最左边有很多层非终结符
-                getProps(newProp[pos + 1], props);
+                getProps(newProp[pos], props);
             }
-            // 加点
-            // 如果这个边权已经有一个点了，那就推进去就好了
-            if (m_Graph[now].count(weight)) {
-                int toPoint = m_Graph[now][weight];
-                // 先删除掉上一个映射
-                m_prop2node.erase(m_property[toPoint][0]);
-                // 插入
+            // 如果这个边权已经有一个点了，直接推进去
+            if (tempNode.count(weight)) {
                 for (auto it: props) {
-                    // 重复的不要推进去
-                    if (std::count(m_property[toPoint].begin(), m_property[toPoint].end(), it)) {
+                    if (std::count(tempNode[weight].begin(), tempNode[weight].end(), it)) {
                         continue;
                     }
-                    m_property[toPoint].emplace_back(it);
+                    tempNode[weight].emplace_back(it);
                 }
-                m_prop2node[m_property[toPoint][0]] = toPoint;    // 重新映射一遍
                 continue;
             }
-            int to = ++m_nodes;
-            m_Graph[to];    // 插入占位
-            m_Graph[now][weight] = to;
-            m_property[to] = props;
-            m_prop2node[props[0]] = to;
-            q.push(to);
+            tempNode[weight] = props;
+//            // 加点
+//            // 如果这个边权已经有一个点了，那就推进去就好了
+//            if (m_Graph[now].count(weight)) {
+//                int toPoint = m_Graph[now][weight];
+//                // 先删除掉上一个映射
+//                m_prop2node.erase(m_property[toPoint]);
+//                // 插入
+//                for (auto it: props) {
+//                    // 重复的不要推进去
+//                    if (std::count(m_property[toPoint].begin(), m_property[toPoint].end(), it)) {
+//                        continue;
+//                    }
+//                    m_property[toPoint].emplace_back(it);
+//                }
+//                m_prop2node[m_property[toPoint]] = toPoint;    // 重新映射一遍
+//                continue;
+//            }
+
+//            // 判断这是不是一个重复的点
+//            if (m_prop2node.count(props)) {
+//                // 重复了就马上把边连过去，然后可以直接跳过
+//                m_Graph[now][weight] = m_prop2node[props];
+//                continue;
+//            }
+
+//            int to = ++m_nodes;
+//            m_Graph[to];    // 插入占位
+//            m_Graph[now][weight] = to;
+//            m_property[to] = props;
+//            m_prop2node[props] = to;
+//            q.push(to);
+        }
+        for (auto [weight, property]: tempNode) {
+            // 判断是不是一个重复的点
+            if (m_prop2node.count(property)) {
+                // 重复了直接连边
+                m_Graph[now][weight] = m_prop2node[property];
+            } else {
+                int to = ++m_nodes;
+                m_Graph[to];    // 插入占位
+                m_Graph[now][weight] = to;
+                m_property[to] = property;
+                m_prop2node[property] = to;
+                q.push(to);
+            }
         }
     }
 }
 
-void Analyzer::getProps(char from, std::vector<std::pair<char, std::string>> &props) {
-    for (auto to: m_grammar[from]) {
-        if (to.empty()) {
-            continue;
-        }
-        std::string rhs = ".";
-        if (to == "@") {
-            if (std::count(props.begin(), props.end(), std::make_pair(from, rhs)) == 0) {
-                props.emplace_back(from, rhs);
-            }
-            continue;
-        }
-        if (std::isupper(to[0])) {
-            // 已经存在就不重复添加
-            int flag = 1;
-            for (auto it: props) {
-                if (it.second.empty()) {
-                    continue;
-                }
-                if (it.first == from && it.second == (rhs + to)) {
-                    flag = 0;
-                    break;
-                }
-            }
-            if (flag == 0) {
+void Analyzer::getProps(char from, std::vector<Item> &props) {
+    std::queue<char> q;
+    std::map<char, int> vis;
+    q.push(from);
+    vis[from] = 1;
+    while (!q.empty()) {
+        char t = q.front();
+        q.pop();
+        for (auto to: m_grammar[t]) {
+            if (to.empty()) {
                 continue;
             }
-            props.emplace_back(from, rhs + to);
-            // 不是左递归
-            if (to[0] != from) {
-                getProps(to[0], props);
+            std::string rhs = "";
+            if (to == "@") {
+                if (std::count(props.begin(), props.end(), Item(t, rhs, 0)) == 0) {
+                    props.emplace_back(t, rhs, 0);
+                }
+                continue;
             }
-        } else {
-            if (std::count(props.begin(), props.end(), std::make_pair(from,  rhs + to)) == 0) {
-                props.emplace_back(from, rhs + to);
+            if (std::isupper(to[0])) {
+                // 已经存在就不重复添加
+                if (std::count(props.begin(), props.end(), Item(t, to, 0))) {
+                    continue;
+                }
+                props.emplace_back(t, to, 0);
+                // 不是左递归
+                if (to[0] != t && !vis[to[0]]) {
+                    q.push(to[0]);
+                    to[0] = 1;
+                }
+            } else {
+                if (std::count(props.begin(), props.end(), Item(t, to, 0)) == 0) {
+                    props.emplace_back(t, to, 0);
+                }
             }
-
         }
     }
 }
@@ -292,14 +311,13 @@ void Analyzer::checkSLR1() {
 
     // 检查每一个点
     for (int i = 0; i <= m_nodes; i++) {
-        std::vector<std::pair<char, std::string>> st = m_property[i];
+        std::vector<Item> st = m_property[i];
 
-        for (auto &[from, to]: st) {
+        for (auto &[from, to, pos]: st) {
+            // 检查归约-归约冲突
             // 检查Follow集的交集
-            for (auto &[rfrom, rto]: st) {
-                int pos = to.find('.');
-                int rpos = rto.find('.');
-                if (from != rfrom && pos == to.size() - 1 && rpos == rto.size() - 1) {
+            for (auto &[rfrom, rto, rpos]: st) {
+                if (from != rfrom && pos == to.size() && rpos == rto.size()) {
                     for (auto c: m_follow[from]) {
                         if (m_follow[rfrom].count(c)) {
                             m_SLR1 = 0;
@@ -310,19 +328,19 @@ void Analyzer::checkSLR1() {
                         }
                     }
                 }
-                // 检查移进-规约冲突
+                // 检查移进-归约冲突
                 // 找到一个A->a.Xp的进行匹配，B->y.的只作为被匹配项目
-                if (pos == to.size() - 1 || std::isupper(to[pos + 1])) {
+                if (pos == to.size() || std::isupper(to[pos])) {
                     continue;
                 }
-                if (rpos != rto.size() - 1) {
+                if (rpos != rto.size()) {
                     continue;
                 }
                 // 看看X在不在Follow(B)
-                if (m_follow[rfrom].count(to[pos + 1])) {
+                if (m_follow[rfrom].count(to[pos])) {
                     m_SLR1 = -1;
-                    m_shift.emplace_back(from, to);
-                    m_shift.emplace_back(rfrom, rto);
+                    m_shift.emplace_back(from, to, pos);
+                    m_shift.emplace_back(rfrom, rto, rpos);
                     m_wstate = i;
                     return;
                 }
@@ -369,7 +387,7 @@ void Analyzer::debugShow() {
             if (cnt++ >= 1) {
                 std::cout << " | ";
             }
-            std::cout << prod.first << "->" << prod.second;
+            std::cout << prod.first << "->" << util::combineDot(prod);
         }
         std::cout << "}";
         std::cout << " -> ";
@@ -394,8 +412,8 @@ void Analyzer::debugShow() {
         }
     } else if (m_SLR1 == -1) {
         std::cout << "Shift reduce conflict" << std::endl;
-        for (auto it: m_shift) {
-            std::cout << it.first << "->" << it.second << std::endl;
+        for (auto prod: m_shift) {
+            std::cout << prod.first << "->" << util::combineDot(prod) << std::endl;
         }
     } else {
         std::cout << "SLR(1)" << std::endl;
@@ -450,13 +468,13 @@ void Analyzer::genSLR1Table() {
         }
 
         // 检查有没有规约项目
-        for (auto &[produce, prop]: m_property[i]) {
-            if (prop.find(".") == prop.size() - 1) {
+        for (auto &[produce, prop, pos]: m_property[i]) {
+            if (pos == prop.size()) {
                 std::string reduce = std::string(1, produce) + "->";
-                if (prop.size() == 1) {
+                if (prop.empty()) {
                     reduce += "@";
                 } else {
-                    reduce += prop.substr(0, prop.size() - 1);
+                    reduce += prop;
                 }
 
                 // 查看Follow集
@@ -589,14 +607,14 @@ std::map<int, std::map<char, int>> Analyzer::getGraph() {
     return m_Graph;
 }
 
-std::map<int, std::vector<std::pair<char, std::string>>> Analyzer::getProperty() {
+std::map<int, std::vector<Item>> Analyzer::getProperty() {
     return m_property;
 }
 
 std::vector<std::pair<char, std::set<char>>> Analyzer::getReduce() {
     return m_reduce;
 }
-std::vector<std::pair<char, std::string>> Analyzer::getShift() {
+std::vector<Item> Analyzer::getShift() {
     return m_shift;
 }
 

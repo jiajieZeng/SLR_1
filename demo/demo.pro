@@ -15,6 +15,7 @@ SOURCES += \
     util.cpp
 
 HEADERS += \
+    Item.h \
     analyzer.h \
     mainwindow.h \
     util.h

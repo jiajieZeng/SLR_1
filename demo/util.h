@@ -5,12 +5,15 @@
 #ifndef DEMO_UTIL_H
 #define DEMO_UTIL_H
 
+#include "Item.h"
+
 #include <set>
 #include <string>
 
 namespace util {
 void combine(std::set<char> &lhs, std::set<char> &rhs);
 bool checkDigit(std::string s);
+std::string combineDot(Item &t);
 }
 
 #endif //DEMO_UTIL_H

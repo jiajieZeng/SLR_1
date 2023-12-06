@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "Item.h"
+#include "util.h"
 
 #include <QTextBlock>
 #include <QMessageBox>
@@ -20,8 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     worker = new Analyzer();
     ui->setupUi(this);
-    ui->grammarInput->setPlaceholderText("请在此输入文法");
-    ui->sentenceInput->setPlaceholderText("请在此输入要分析的句子(以 $ 结尾)\n输入前请确认已经进行了文法分析");
+    ui->grammarInput->setPlaceholderText("请在此输入文法(请勿输入中文字符)");
+    ui->sentenceInput->setPlaceholderText("请在此输入要分析的句子(以 $ 结尾)\n输入前请确认已经进行了文法分析(请勿输入中文字符)");
     ui->outputTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->stackTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
@@ -53,7 +55,7 @@ void MainWindow::on_anaBtn_clicked()
     if (worker->getSLR1() == 1) {
         worker->genSLR1Table();
     }
-//    worker->debugShow();
+    worker->debugShow();
 }
 
 
@@ -142,23 +144,24 @@ void MainWindow::on_dfaBtn_clicked()
 
 
     std::map<int, std::map<char, int>> graph = worker->getGraph();
-    std::map<int, std::vector<std::pair<char, std::string>>> property = worker->getProperty();
+    std::map<int, std::vector<Item>> property = worker->getProperty();
 
     int nodes = worker->getNodes();
     ui->outputTable->setRowCount(nodes + 5);
 
     for (int i = 0; i <= nodes; i++) {
-        std::string s = std::to_string(i) + " {";
+        QString qs = QString::fromStdString(std::to_string(i) + " {");
         int cnt = 0;
-        for (auto &[prod, prop]: property[i]) {
+        for (auto &item: property[i]) {
+            std::string s;
             if (++cnt > 1) {
                 s += ", ";
             }
-            s += std::string(1, prod) + "->" + prop;
+            s += std::string(1, item.first) + "->" + util::combineDot(item);
+            qs += QString::fromStdString(s);
         }
-        s += "}";
-        QString qs = QString::fromStdString(s);
-        ui->outputTable->setItem(i + 1, 0, new QTableWidgetItem(QString::fromStdString(s)));
+        qs += "}";
+        ui->outputTable->setItem(i + 1, 0, new QTableWidgetItem(qs));
         for (auto &[weight, to]: graph[i]) {
             ui->outputTable->setItem(i + 1, mp[weight], new QTableWidgetItem(QString::number(to)));
         }
@@ -180,9 +183,10 @@ void MainWindow::on_judgeBtn_clicked()
     }
     if (sign == -1) {
         std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在移进-归约冲突\n";
-        std::vector<std::pair<char, std::string>> shift = worker->getShift();
+        std::vector<Item> shift = worker->getShift();
+        ans = "";
         for (auto it: shift) {
-            str += std::string(1, it.first) + "->" + it.second + "\n";
+            str += std::string(1, it.first) + "->" + util::combineDot(it) + "\n";
         }
         ans = QString::fromStdString(str);
     }
