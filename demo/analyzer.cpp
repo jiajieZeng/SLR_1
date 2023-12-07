@@ -549,11 +549,24 @@ std::vector< std::vector< std::deque<std::string> > > Analyzer::analyze(std::str
                 in.pop_front();
             } else {    // 规约
                 action.push_back("reduce  " + to);
+                bool flag = 1;
+                // 空的话直接归约
                 if (to.back() != '@') {
                     for (int i = to.size() - 1; to[i] != '>'; i--) {
+                        ana.pop_back(); // 这一个肯定是状态号
+                        std::string top = ana.back();
                         ana.pop_back();
-                        ana.pop_back();
+                        if (top[0] != to[i]) {
+                            action.push_back("ERROR");
+                            tmp.push_back(action);
+                            ans.emplace_back(tmp);
+                            flag = 0;
+                            break;
+                        }
                     }
+                }
+                if (flag == 0) {
+                    break;
                 }
                 nowState = atoi(ana.back().c_str()); // 切换当前状态
                 char go = to[0];
