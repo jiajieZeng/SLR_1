@@ -24,6 +24,8 @@ public:
 
     void genFirst();
 
+    void genFirstRec();
+
     void genFollow();
 
     void recFollow(const std::string &str, int i, int j, bool &flag);
@@ -39,8 +41,6 @@ public:
     std::vector< std::vector< std::deque<std::string> > > analyze(std::string input);
 
     void debugShow();
-
-    void debugShowGrammar();
 
     int getSLR1();
 
@@ -70,6 +70,8 @@ public:
 
     std::map<int, std::map<char, std::pair<std::string, std::string>>> getTable();
 
+private:
+    void genFirstRec(char now, std::map<char, int> &mp);
 
 private:
 

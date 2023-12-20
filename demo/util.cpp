@@ -16,7 +16,7 @@ void combine(std::set<char> &lhs, std::set<char> &rhs) {
 
 bool checkDigit(std::string s) {
     for (auto c: s) {
-        if (!std::isdigit(c)) {
+        if (!isdigit(c)) {
             return 0;
         }
     }

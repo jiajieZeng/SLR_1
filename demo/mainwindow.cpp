@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->sentenceInput->setPlaceholderText("请在此输入要分析的句子(以 $ 结尾)\n输入前请确认已经进行了文法分析(请勿输入中文字符)");
     ui->outputTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->stackTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    this->setWindowTitle("SLR(1)");
 }
 
 MainWindow::~MainWindow()
@@ -77,7 +78,7 @@ void MainWindow::on_firstBtn_clicked()
         if (n_begin != m_begin && lhs == n_begin) {
             continue;
         }
-        if (!std::isupper(lhs)) {
+        if (!isupper(lhs)) {
             continue;
         }
         std::string tlhs = std::string(1, lhs);
@@ -101,7 +102,7 @@ void MainWindow::on_firstBtn_clicked()
         if (n_begin != m_begin && lhs == n_begin) {
             continue;
         }
-        if (!std::isupper(lhs)) {
+        if (!isupper(lhs)) {
             continue;
         }
         std::string tlhs = std::string(1, lhs);
@@ -228,7 +229,7 @@ void MainWindow::on_tableBtn_clicked()
     std::set<char> alphabet = worker->getAlphabet();
     std::set<char> upper, lower;
     for (auto c: alphabet) {
-        if (std::isupper(c)) {
+        if (isupper(c)) {
             upper.insert(c);
         } else {
             lower.insert(c);

@@ -62,7 +62,6 @@ void Analyzer::clear() {
 }
 
 void Analyzer::genFirst() {
-    debugShowGrammar();
     m_ana = 1;
     bool genNew = true;
     while (genNew) {
@@ -74,7 +73,7 @@ void Analyzer::genFirst() {
                 int k = 0;
                 while (k < n) {
                     char to = chain[k];
-                    if (!std::isupper(to)) {
+                    if (!isupper(to)) {
                         if (m_first[to].empty()){
                             genNew = true;
                         }
@@ -97,19 +96,56 @@ void Analyzer::genFirst() {
     }
 }
 
+void Analyzer::genFirstRec()
+{
+    std::map<char, int> mp;
+    genFirstRec(m_begin, mp);
+}
+
+void Analyzer::genFirstRec(char now, std::map<char, int> &mp)
+{
+    // 终结符或@
+    if (!isupper(now)) {
+        m_first[now].insert(now);
+        return;
+    }
+    mp[now] = 1;
+    for (auto &[A, toset]: m_grammar) {
+        for (auto &chain: toset) {
+            int n = chain.size();
+            int k = 0;
+            while (k < n) {
+                char to = chain[k];
+                if (!mp[to]) {
+                    genFirstRec(to, mp);
+                }
+                util::combine(m_first[A], m_first[to]);
+                if (!m_first[to].count('@')) {
+                    break;
+                }
+                ++k;
+            }
+            if (k == n) {
+                m_first[A].insert('@');
+            }
+        }
+    }
+}
+
+
 void Analyzer::genFollow() {
     m_follow[m_begin].insert('$');
     bool genNew = true;
     while (genNew) {
         genNew = false;
         for (auto &[A, toset]: m_grammar) {
-            if (!std::isupper(A)) {
+            if (!isupper(A)) {
                 continue;
             }
             for (auto &str: toset) {
                 for (int i = 0; i < str.size(); i++) {
                     char now = str[i];
-                    if (!std::isupper(now)) {
+                    if (!isupper(now)) {
                         continue;
                     }
                     if (i + 1 == str.size()) {
@@ -137,7 +173,7 @@ void Analyzer::genFollow() {
 }
 
 void Analyzer::recFollow(const std::string &str, int i, int j, bool &flag) {
-    if (!std::isupper(str[j])) {
+    if (!isupper(str[j])) {
         m_follow[str[i]].insert(str[j]);
         return;
     }
@@ -168,6 +204,7 @@ void Analyzer::genDFA() {
             n_begin = 'Z' + 1;
         }
         m_follow[n_begin].insert('$');  // 文法结束符号在新的begin的Follow集合里面
+        m_first[n_begin] = m_first[m_begin];
     } else {
         n_begin = m_begin;
     }
@@ -199,7 +236,7 @@ void Analyzer::genDFA() {
             props.clear();
             props.emplace_back(produce, newProp, pos);
             // 非终结符
-            if (pos < newProp.size() && std::isupper(newProp[pos])) {
+            if (pos < newProp.size() && isupper(newProp[pos])) {
                 // 要递归处理，因为可能最左边有很多层非终结符
                 getProps(newProp[pos], props);
             }
@@ -214,37 +251,6 @@ void Analyzer::genDFA() {
                 continue;
             }
             tempNode[weight] = props;
-//            // 加点
-//            // 如果这个边权已经有一个点了，那就推进去就好了
-//            if (m_Graph[now].count(weight)) {
-//                int toPoint = m_Graph[now][weight];
-//                // 先删除掉上一个映射
-//                m_prop2node.erase(m_property[toPoint]);
-//                // 插入
-//                for (auto it: props) {
-//                    // 重复的不要推进去
-//                    if (std::count(m_property[toPoint].begin(), m_property[toPoint].end(), it)) {
-//                        continue;
-//                    }
-//                    m_property[toPoint].emplace_back(it);
-//                }
-//                m_prop2node[m_property[toPoint]] = toPoint;    // 重新映射一遍
-//                continue;
-//            }
-
-//            // 判断这是不是一个重复的点
-//            if (m_prop2node.count(props)) {
-//                // 重复了就马上把边连过去，然后可以直接跳过
-//                m_Graph[now][weight] = m_prop2node[props];
-//                continue;
-//            }
-
-//            int to = ++m_nodes;
-//            m_Graph[to];    // 插入占位
-//            m_Graph[now][weight] = to;
-//            m_property[to] = props;
-//            m_prop2node[props] = to;
-//            q.push(to);
         }
         for (auto [weight, property]: tempNode) {
             // 判断是不是一个重复的点
@@ -282,7 +288,7 @@ void Analyzer::getProps(char from, std::vector<Item> &props) {
                 }
                 continue;
             }
-            if (std::isupper(to[0])) {
+            if (isupper(to[0])) {
                 // 已经存在就不重复添加
                 if (std::count(props.begin(), props.end(), Item(t, to, 0))) {
                     continue;
@@ -330,7 +336,7 @@ void Analyzer::checkSLR1() {
                 }
                 // 检查移进-归约冲突
                 // 找到一个A->a.Xp的进行匹配，B->y.的只作为被匹配项目
-                if (pos == to.size() || std::isupper(to[pos])) {
+                if (pos == to.size() || isupper(to[pos])) {
                     continue;
                 }
                 if (rpos != rto.size()) {
@@ -353,7 +359,7 @@ void Analyzer::debugShow() {
     std::cout << "First:" << std::endl;
     int cnt = 0;
     for (auto it: m_first) {
-        if (!std::isupper(it.first)) {
+        if (!isupper(it.first)) {
             continue;
         }
         std::cout << it.first << ":  {";
@@ -429,15 +435,6 @@ void Analyzer::debugShow() {
     }
 }
 
-void Analyzer::debugShowGrammar()
-{
-    for (auto &[prod, prop]: m_grammar) {
-        for (auto it: prop) {
-            std::cout << prod << "->" << it << std::endl;
-        }
-    }
-}
-
 int Analyzer::getSLR1()
 {
     return m_SLR1;
@@ -459,7 +456,7 @@ void Analyzer::genSLR1Table() {
         // 先填入移进项目
         std::string move;
         for (auto &[weight, to]: m_Graph[i]) {
-            if (std::isupper(weight)) {
+            if (isupper(weight)) {
                 move = "goto";
             } else {
                 move = "s";
