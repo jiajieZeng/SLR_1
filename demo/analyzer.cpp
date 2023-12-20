@@ -204,7 +204,8 @@ void Analyzer::genDFA() {
             n_begin = 'Z' + 1;
         }
         m_follow[n_begin].insert('$');  // 文法结束符号在新的begin的Follow集合里面
-        m_first[n_begin] = m_first[m_begin];
+//        m_follow[n_begin] = m_follow[m_begin];
+//        m_first[n_begin] = m_first[m_begin];
     } else {
         n_begin = m_begin;
     }
