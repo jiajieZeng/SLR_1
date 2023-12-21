@@ -52,7 +52,9 @@ public:
 
     int getNodes();
 
-    int getWstate();
+    int getRRConflict();
+
+    int getSRConflict();
 
     std::set<char> getAlphabet();
 
@@ -64,9 +66,9 @@ public:
 
     std::map<int, std::vector<Item>> getProperty();
 
-    std::vector<std::pair<char, std::set<char>>> getReduce();
+    std::map<int, std::set<std::pair<Item, Item>>> getReduce();
 
-    std::vector<Item> getShift();
+    std::map<int, std::set<std::pair<Item, Item>>> getShift();
 
     std::map<int, std::map<char, std::pair<std::string, std::string>>> getTable();
 
@@ -94,12 +96,13 @@ private:
     std::map<std::vector<Item>, int> m_prop2node;
     // SLR1部分
     int m_SLR1;
-    int m_wstate;
-    std::vector<std::pair<char, std::set<char>>> m_reduce;
-    std::vector<Item> m_shift;
+    int m_RRConflict;
+    int m_SRConflict;
+    std::map<int, std::set<std::pair<Item, Item>>> m_reduce;
+
+    std::map<int, std::set<std::pair<Item, Item>>> m_shift;
     // 点-边权-动作
     std::map<int, std::map<char, std::pair<std::string, std::string> >> m_table;
-
 };
 
 

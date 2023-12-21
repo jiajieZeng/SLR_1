@@ -53,7 +53,7 @@ void MainWindow::on_anaBtn_clicked()
     worker->genFollow();
     worker->genDFA();
     worker->checkSLR1();
-    if (worker->getSLR1() == 1) {
+    if (worker->getRRConflict() == 0) {
         worker->genSLR1Table();
     }
     worker->debugShow();
@@ -176,39 +176,38 @@ void MainWindow::on_judgeBtn_clicked()
         QMessageBox::warning(this, "warning", "请先输入文法进行分析");
         return;
     }
-    int sign = worker->getSLR1();
-    int wstate = worker->getWstate();
     QString ans;
-    if (sign == 1) {
+    if (worker->getSLR1() == 1) {
         ans = "文法是SLR(1)文法";
     }
-    if (sign == -1) {
-        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在移进-归约冲突\n";
-        std::vector<Item> shift = worker->getShift();
+    if (worker->getSRConflict() == 1) {
+        std::string str = "不是SLR(1)文法，存在移进-归约冲突\n";
+        std::map<int, std::set<std::pair<Item, Item>>> shift = worker->getShift();
         ans = "";
         for (auto it: shift) {
-            str += std::string(1, it.first) + "->" + util::combineDot(it) + "\n";
-        }
-        ans = QString::fromStdString(str);
-    }
-    if (sign == 0) {
-        std::string str = "不是SLR(1)文法，在状态 " + std::to_string(wstate) + " 存在归约-归约冲突\n";
-        std::vector<std::pair<char, std::set<char>>> reduce = worker->getReduce();
-        for (auto &[prod, prop]: reduce) {
-            str += "Follow(" + std::string(1, prod) + ")={ ";
-            int cnt = 0;
-            for (auto c: prop) {
-                if (++cnt > 1) {
-                    str += ", ";
-                }
-                str += c;
+            str += "在状态 (" + std::to_string(it.first) + ") 存在移进-归约冲突项\n";
+            for (auto [lhs, rhs]: it.second) {
+                str += std::string(1, lhs.first) + "->" + util::combineDot(lhs) + "\n";
+                str += std::string(1, rhs.first) + "->" + util::combineDot(rhs) + "\n";
             }
-            str += "}\n";
         }
         ans = QString::fromStdString(str);
     }
-    if (sign != 1) {
-        ans += "可能还存在其他冲突，但我们找到一个冲突就会停止\n";
+
+    if (worker->getRRConflict() == 1) {
+        std::map<char, std::set<char>> follow = worker->getFollow();
+        std::string str = "不是SLR(1)文法，存在归约-归约冲突\n";
+        std::map<int, std::set<std::pair<Item, Item>>> reduce = worker->getReduce();
+        for (auto it: reduce) {
+            str += "在状态 (" + std::to_string(it.first) + ") 存在归约-归约冲突项\n";
+            for (auto [lhs, rhs]: it.second) {
+                str += std::string(1, lhs.first) + "->" + util::combineDot(lhs) + " ";
+                str += "Follow(" + std::string(1, lhs.first) + ")={ " + util::combineFollow(follow[lhs.first]);
+                str += std::string(1, rhs.first) + "->" + util::combineDot(rhs) + " ";
+                str += "Follow(" + std::string(1, rhs.first) + ")={ " + util::combineFollow(follow[rhs.first]) + "\n";
+            }
+        }
+        ans += QString::fromStdString(str);
     }
     QMessageBox::information(this, "info", ans);
 }
@@ -220,8 +219,8 @@ void MainWindow::on_tableBtn_clicked()
         QMessageBox::warning(this, "warning", "请先输入文法进行分析");
         return;
     }
-    if (worker->getSLR1() != 1) {
-        QMessageBox::warning(this, "warning", "不是SLR(1)文法，文法写出SLR(1)分析表");
+    if (worker->getRRConflict() == 1) {
+        QMessageBox::warning(this, "warning", "不是SLR(1)文法，存在归约-归约冲突，无法写出SLR(1)分析表");
         return;
     }
     ui->outputTable->clear();
@@ -279,8 +278,8 @@ void MainWindow::on_sentenceBtn_clicked()
         QMessageBox::warning(this, "warning","请先进行文法分析");
         return;
     }
-    if (worker->getSLR1() != 1) {
-        QMessageBox::warning(this, "warning","不是SLR(1)文法，无法分析");
+    if (worker->getRRConflict() == 1) {
+        QMessageBox::warning(this, "warning","不是SLR(1)文法，存在归约-归约冲突，无法分析");
         return;
     }
     QTextDocument *document = Q_NULLPTR;

@@ -36,4 +36,18 @@ std::string combineDot(Item &t)
     return res;
 }
 
+std::string combineFollow(std::set<char> &st)
+{
+    std::string ansstr = "";
+    int cnt = 0;
+    for (auto c: st) {
+        if (++cnt > 1) {
+            ansstr += ", ";
+        }
+        ansstr += c;
+    }
+    ansstr += "}\n";
+    return ansstr;
+}
+
 }

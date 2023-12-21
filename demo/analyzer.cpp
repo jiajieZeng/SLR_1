@@ -46,9 +46,8 @@ void Analyzer::addGrammar(std::string &grammar) {
 
 void Analyzer::clear() {
     n_begin = m_begin = '$';
-    m_ana = m_cnt = m_nodes = 0;
+    m_RRConflict = m_SRConflict = m_ana = m_cnt = m_nodes = 0;
     m_SLR1 = 1;
-    m_wstate = -1;
     m_first.clear();
     m_grammar.clear();
     m_alphabet.clear();
@@ -320,23 +319,31 @@ void Analyzer::checkSLR1() {
     for (int i = 0; i <= m_nodes; i++) {
         std::vector<Item> st = m_property[i];
 
-        for (auto &[from, to, pos]: st) {
+        for (auto it = st.begin(); it != st.end(); it++) {
+            char from = it->first;
+            std::string to = it->second;
+            int pos = it->idx;
             // 检查归约-归约冲突
             // 检查Follow集的交集
-            for (auto &[rfrom, rto, rpos]: st) {
-                if (from != rfrom && pos == to.size() && rpos == rto.size()) {
+            // 从next开始，避免重复
+            for (auto rit = std::next(it); rit != st.end(); rit++) {
+                char rfrom = rit->first;
+                std::string rto = rit->second;
+                int rpos = rit->idx;
+                if (pos == to.size() && rpos == rto.size()) {
                     for (auto c: m_follow[from]) {
                         if (m_follow[rfrom].count(c)) {
                             m_SLR1 = 0;
-                            m_reduce.emplace_back(from, m_follow[from]);
-                            m_reduce.emplace_back(rfrom, m_follow[rfrom]);
-                            m_wstate = i;
-                            return;
+                            m_RRConflict = 1;
+                            m_reduce[i].insert(std::make_pair(*it, *rit));
                         }
                     }
                 }
-                // 检查移进-归约冲突
-                // 找到一个A->a.Xp的进行匹配，B->y.的只作为被匹配项目
+            }
+
+            // 检查移进-归约冲突
+            // 找到一个A->a.Xp的进行匹配，B->y.的只作为被匹配项目
+            for (auto &[rfrom, rto, rpos]: st) {
                 if (pos == to.size() || isupper(to[pos])) {
                     continue;
                 }
@@ -346,10 +353,8 @@ void Analyzer::checkSLR1() {
                 // 看看X在不在Follow(B)
                 if (m_follow[rfrom].count(to[pos])) {
                     m_SLR1 = -1;
-                    m_shift.emplace_back(from, to, pos);
-                    m_shift.emplace_back(rfrom, rto, rpos);
-                    m_wstate = i;
-                    return;
+                    m_SRConflict = 1;
+                    m_shift[i].insert(std::make_pair(*it, Item(rfrom, rto, rpos)));
                 }
             }
         }
@@ -403,28 +408,28 @@ void Analyzer::debugShow() {
         }
         std::cout << std::endl;
     }
-    std::cout << "--------------------------------------------------------" << std::endl;
-    if (m_SLR1 == 0) {
-        std::cout << "Reduce conflict" << std::endl;
-        for (auto it: m_reduce) {
-            std::cout << "Follow(" << it.first << ")={";
-            cnt = 0;
-            for (auto c: it.second) {
-                if (++cnt > 1) {
-                    std::cout << ",";
-                }
-                std::cout << c;
-            }
-            std::cout << "}" << std::endl;
-        }
-    } else if (m_SLR1 == -1) {
-        std::cout << "Shift reduce conflict" << std::endl;
-        for (auto prod: m_shift) {
-            std::cout << prod.first << "->" << util::combineDot(prod) << std::endl;
-        }
-    } else {
-        std::cout << "SLR(1)" << std::endl;
-    }
+//    std::cout << "--------------------------------------------------------" << std::endl;
+//    if (m_SLR1 == 0) {
+//        std::cout << "Reduce conflict" << std::endl;
+//        for (auto it: m_reduce) {
+//            std::cout << "Follow(" << it.first << ")={";
+//            cnt = 0;
+//            for (auto c: it.second) {
+//                if (++cnt > 1) {
+//                    std::cout << ",";
+//                }
+//                std::cout << c;
+//            }
+//            std::cout << "}" << std::endl;
+//        }
+//    } else if (m_SLR1 == -1) {
+//        std::cout << "Shift reduce conflict" << std::endl;
+//        for (auto prod: m_shift) {
+//            std::cout << prod.first << "->" << util::combineDot(prod) << std::endl;
+//        }
+//    } else {
+//        std::cout << "SLR(1)" << std::endl;
+//    }
     std::cout << "--------------------------------------------------------" << std::endl;
     std::cout << "SLR(1) table" << std::endl;
     for (int i = 0; i <= m_nodes; i++) {
@@ -596,9 +601,14 @@ int Analyzer::getNodes() {
     return m_nodes;
 }
 
-int Analyzer::getWstate()
+int Analyzer::getRRConflict()
 {
-    return m_wstate;
+    return m_RRConflict;
+}
+
+int Analyzer::getSRConflict()
+{
+    return m_SRConflict;
 }
 
 std::set<char> Analyzer::getAlphabet()
@@ -622,10 +632,11 @@ std::map<int, std::vector<Item>> Analyzer::getProperty() {
     return m_property;
 }
 
-std::vector<std::pair<char, std::set<char>>> Analyzer::getReduce() {
+std::map<int, std::set<std::pair<Item, Item>>> Analyzer::getReduce() {
     return m_reduce;
 }
-std::vector<Item> Analyzer::getShift() {
+
+std::map<int, std::set<std::pair<Item, Item>>> Analyzer::getShift() {
     return m_shift;
 }
 
