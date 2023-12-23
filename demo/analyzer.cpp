@@ -309,6 +309,38 @@ void Analyzer::getProps(char from, std::vector<Item> &props) {
     }
 }
 
+void Analyzer::getProps2(char from, std::vector<Item> &props) {
+    std::queue<char> q;
+    std::map<char, int> vis;
+    q.push(from);
+    vis[from] = 1;
+    while (!q.empty()) {
+        char t = q.front();
+        q.pop();
+        for (auto to: m_grammar[t]) {
+            if (to.empty()) {
+                continue;
+            }
+            Item item = Item(t);
+            if (to == "@") {
+                if (std::count(props.begin(), props.end(), item) == 0) {
+                    props.emplace_back(item);
+                }
+            } else {
+                item.second = to;
+                if (std::count(props.begin(), props.end(), item)) {
+                    continue;
+                }
+                props.emplace_back(item);
+                if (isupper(to[0]) && t != to[0] && !vis[to[0]]) {
+                    q.push(to[0]);
+                    vis[to[0]] = 1;
+                }
+            }
+        }
+    }
+}
+
 /*
  * SLR(1)解决移进-规约冲突
  * 在同一个点内，如果有A->aE.cD, D->E. 此时{c}交Follow(D)应该为空

@@ -75,6 +75,7 @@ public:
 private:
     void genFirstRec(char now, std::map<char, int> &mp);
 
+    void getProps2(char from, std::vector<Item> &props)
 private:
 
     int m_ana;
