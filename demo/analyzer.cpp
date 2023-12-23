@@ -109,24 +109,22 @@ void Analyzer::genFirstRec(char now, std::map<char, int> &mp)
         return;
     }
     mp[now] = 1;
-    for (auto &[A, toset]: m_grammar) {
-        for (auto &chain: toset) {
-            int n = chain.size();
-            int k = 0;
-            while (k < n) {
-                char to = chain[k];
-                if (!mp[to]) {
-                    genFirstRec(to, mp);
-                }
-                util::combine(m_first[A], m_first[to]);
-                if (!m_first[to].count('@')) {
-                    break;
-                }
-                ++k;
+    for (auto &chain: m_grammar[now]) {
+        int n = chain.size();
+        int k = 0;
+        while (k < n) {
+            char to = chain[k];
+            if (!mp[to]) {
+                genFirstRec(to, mp);
             }
-            if (k == n) {
-                m_first[A].insert('@');
+            util::combine(m_first[now], m_first[to]);
+            if (!m_first[to].count('@')) {
+                break;
             }
+            ++k;
+        }
+        if (k == n) {
+            m_first[now].insert('@');
         }
     }
 }
