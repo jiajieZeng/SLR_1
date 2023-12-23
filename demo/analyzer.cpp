@@ -297,7 +297,8 @@ void Analyzer::getProps(char from, std::vector<Item> &props) {
                 // 不是左递归
                 if (to[0] != t && !vis[to[0]]) {
                     q.push(to[0]);
-                    to[0] = 1;
+                    // to[0] = 1; !!!!!!!!!!!!!!
+                    vis[to[0]] = 1;
                 }
             } else {
                 if (std::count(props.begin(), props.end(), Item(t, to, 0)) == 0) {
