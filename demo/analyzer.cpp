@@ -320,20 +320,16 @@ void Analyzer::getProps2(char from, std::vector<Item> &props) {
                 continue;
             }
             Item item = Item(t);
-            if (to == "@") {
-                if (std::count(props.begin(), props.end(), item) == 0) {
-                    props.emplace_back(item);
-                }
-            } else {
+            if (to != "@") {
                 item.second = to;
-                if (std::count(props.begin(), props.end(), item)) {
-                    continue;
-                }
-                props.emplace_back(item);
-                if (isupper(to[0]) && t != to[0] && !vis[to[0]]) {
-                    q.push(to[0]);
-                    vis[to[0]] = 1;
-                }
+            }
+            if (std::count(props.begin(), props.end(), item)) {
+                continue;
+            }
+            props.push_back(item);
+            if (isupper(to[0]) && t != to[0] && !vis[to[0]]) {
+                q.push(to[0]);
+                vis[to[0]] = 1;
             }
         }
     }
