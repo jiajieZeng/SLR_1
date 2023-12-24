@@ -353,16 +353,18 @@ void Analyzer::checkSLR1() {
             // 检查归约-归约冲突
             // 检查Follow集的交集
             // 从next开始，避免重复
-            for (auto rit = std::next(it); rit != st.end(); rit++) {
-                char rfrom = rit->first;
-                std::string rto = rit->second;
-                int rpos = rit->idx;
-                if (pos == to.size() && rpos == rto.size()) {
-                    for (auto c: m_follow[from]) {
-                        if (m_follow[rfrom].count(c)) {
-                            m_SLR1 = 0;
-                            m_RRConflict = 1;
-                            m_reduce[i].insert(std::make_pair(*it, *rit));
+            if (pos == to.size()) {
+                for (auto rit = std::next(it); rit != st.end(); rit++) {
+                    char rfrom = rit->first;
+                    std::string rto = rit->second;
+                    int rpos = rit->idx;
+                    if (rpos == rto.size()) {
+                        for (auto c: m_follow[from]) {
+                            if (m_follow[rfrom].count(c)) {
+                                m_SLR1 = 0;
+                                m_RRConflict = 1;
+                                m_reduce[i].insert(std::make_pair(*it, *rit));
+                            }
                         }
                     }
                 }
@@ -370,18 +372,17 @@ void Analyzer::checkSLR1() {
 
             // 检查移进-归约冲突
             // 找到一个A->a.Xp的进行匹配，B->y.的只作为被匹配项目
-            for (auto &[rfrom, rto, rpos]: st) {
-                if (pos == to.size() || isupper(to[pos])) {
-                    continue;
-                }
-                if (rpos != rto.size()) {
-                    continue;
-                }
-                // 看看X在不在Follow(B)
-                if (m_follow[rfrom].count(to[pos])) {
-                    m_SLR1 = -1;
-                    m_SRConflict = 1;
-                    m_shift[i].insert(std::make_pair(*it, Item(rfrom, rto, rpos)));
+            if (pos != to.size() && !isupper(to[pos])) {
+                for (auto &[rfrom, rto, rpos]: st) {
+                    if (rpos != rto.size()) {
+                        continue;
+                    }
+                    // 看看X在不在Follow(B)
+                    if (m_follow[rfrom].count(to[pos])) {
+                        m_SLR1 = -1;
+                        m_SRConflict = 1;
+                        m_shift[i].insert(std::make_pair(*it, Item(rfrom, rto, rpos)));
+                    }
                 }
             }
         }
